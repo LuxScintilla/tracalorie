@@ -16,12 +16,14 @@ class CalorieTracker {
   addMeal(meal) {
     this.#meals.push(meal);
     this.#totalCalories += meal.calories;
+    this.#displayNewMeal(meal);
     this.#render();
   }
 
   addWorkout(workout) {
     this.#workouts.push(workout);
     this.#totalCalories -= workout.calories;
+    this.#displayNewWorkout(workout);
     this.#render();
   }
 
@@ -90,6 +92,48 @@ class CalorieTracker {
     progressEl.style.width = `${width}%`;
   }
 
+  #displayNewMeal(meal) {
+    const mealsEl = document.querySelector("#meal-items");
+    const mealEl = document.createElement("div");
+    mealEl.classList.add("card", "my-2");
+    mealEl.setAttribute("data-id", meal.id);
+    mealEl.innerHTML = `
+    <div class="card-body">
+      <div class="d-flex align-items-center justify-content-between">
+        <h4 class="mx-1">${meal.name}</h4>
+        <div
+          class="fs-1 bg-primary text-white text-center rounded-2 px-2 px-sm-5"
+        >${meal.calories}</div>
+        <button class="delete btn btn-danger btn-sm mx-2">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+    `;
+    mealsEl.appendChild(mealEl);
+  }
+
+  #displayNewWorkout(workout) {
+    const workoutsEl = document.querySelector("#workout-items");
+    const workoutEl = document.createElement("div");
+    workoutEl.classList.add("card", "my-2");
+    workoutEl.setAttribute("data-id", workout.id);
+    workoutEl.innerHTML = `
+    <div class="card-body">
+      <div class="d-flex align-items-center justify-content-between">
+        <h4 class="mx-1">${workout.name}</h4>
+        <div
+          class="fs-1 bg-secondary text-white text-center rounded-2 px-2 px-sm-5"
+        >${workout.calories}</div>
+        <button class="delete btn btn-danger btn-sm mx-2">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+    `;
+    workoutsEl.appendChild(workoutEl);
+  }
+
   #render() {
     this.#displayCaloriesConsumed();
     this.#displayCaloriesBurned();
@@ -115,14 +159,44 @@ class Workout {
   }
 }
 
-const tracker = new CalorieTracker();
+class App {
+  #tracker;
+  constructor() {
+    this.#tracker = new CalorieTracker();
+    document
+      .querySelector("#meal-form")
+      .addEventListener("submit", this.#newItem.bind(this, "meal"));
+    document
+      .querySelector("#workout-form")
+      .addEventListener("submit", this.#newItem.bind(this, "workout"));
+  }
 
-const breakfast = new Meal("breakfast", 500);
-const dinner = new Meal("dinner", 500);
-tracker.addMeal(breakfast);
-tracker.addMeal(dinner);
+  #newItem(type, e) {
+    e.preventDefault();
+    const name = document.querySelector(`#${type}-name`);
+    const calories = document.querySelector(`#${type}-calories`);
 
-const run = new Workout("morning run", 200);
-tracker.addWorkout(run);
+    if (name.value === "" || calories.value === "") {
+      alert("Please fill in all fields");
+      return;
+    }
 
-tracker.getInfo();
+    if (type === "meal") {
+      const meal = new Meal(name.value, Number(calories.value));
+      this.#tracker.addMeal(meal);
+    } else {
+      const workout = new Workout(name.value, Number(calories.value));
+      this.#tracker.addWorkout(workout);
+    }
+
+    name.value = "";
+    calories.value = "";
+
+    const collapseType = document.querySelector(`#collapse-${type}`);
+    const bsCollapse = new bootstrap.Collapse(collapseType, {
+      toggle: true,
+    });
+  }
+}
+
+const app = new App();
